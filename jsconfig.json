@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "amd",        // Indicate the AMD module system
+    "moduleResolution": "Bundler",
+    "baseUrl": "./scripts",        // Base directory for resolving paths
+    "paths": {              // Map module names to paths
+      "app/*": ["app/*"] 
+    },
+    "checkJs": true        // Enable type-checking and other features for JS files
+  },
+  "include": ["app/*","libs/*"]
+
+  ,"exclude": [
+    "node_modules"         // Exclude node_modules from LSP analysis
+  ]
+}
