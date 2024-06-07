@@ -1,4 +1,4 @@
-define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line'],function (Waypoints,Grid,Map,Util,Shared,Line) {
+define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line','app/path'],function (Waypoints,Grid,Map,Util,Shared,Line,Path) {
 
 	/*
 	primitive unit -- expects to have its fields updated for a unit-type , eg. runner class or chaser
@@ -18,10 +18,18 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line']
 			this.radius = 0;
 		};
 
+		/*
+			Called by server frame.
+			Calculates the destination need to travel, every step.
 
+			allowedDistance is the unit's speed. Think of it like fuel.
+			Atm it guarantees to spend its fuel, so if the unit was blocked or prevented from moving,
+			this would hang the processing. == bad.
+			It should rather just try to move once, if it can't move, give up this frame.
+		*/
 		this.newUnit.prototype.moveStraight = function ( allowedDistance) {
 
-			// let aa = this.wpsystem.intervalCb.call(this.wpsystem,this);
+			//Find the next line of sight node.
 			let [destx,desty] = this.wpsystem.intervalCb(this);
 
 			var dx = destx - this.mesh.position.x;
@@ -30,96 +38,45 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line']
 
 			var distThere = Math.sqrt(dx*dx+dy*dy);
 
-			var newpos;
-			var newposTile;
 
 			/*
-				the distance is too far, so only move what u can .. even tho u wont reach the complete dest
-				dist to get there is more than allowed distance, so move allowed distance ONLY.
-				because this is allowed distance per 'frame' or 'tick', so to speak, so job done. easy.
+				TODO:
+					Handle collision with dynamic objects. (everything except map cliffs.)
+					Highlight tiles which intersect with Speed Vector.
+					Check them for collision.
+			*/
+
+			/*
+				Take your largest step. You still won't reach 'goal'.
 			*/
 			if ( distThere > allowedDistance ) {
-				//SMALL STEP. NEED MORE FRAMES TO REACH DEST.
 
 				var ratio = allowedDistance / distThere;
-				
-
 
 				var aNewPosX = this.mesh.position.x + dx * ratio;
 				var aNewPosY = this.mesh.position.y + dy * ratio;
 
-				var lolx = Util.getTileFromReal(aNewPosX);
-				var loly = Util.getTileFromReal(aNewPosY);
-				var n = Util.twoarrayToone(lolx,loly);
-
-				
-				/*
-				check outer planes of new position ( bound box ) are beyond the sitting in tiles' boundary and that offending tile is a collision tile
-				*/
-				// if ( ( ( aNewPosY - Shared.cellSize/2 < (loly)*Shared.cellSize ) && ( Map.data[n-Shared.gridWidth] == 0) ) ||
-				//   ( ( aNewPosY + Shared.cellSize/2 > (Math.ceil(aNewPosY/Shared.cellSize))*Shared.cellSize ) && (Map.data[n+Shared.gridWidth] == 0) ) ) {
-				// 	//clamp vertical
-				// 	//console.log('vertical overlap detected');
-				// 	aNewPosY = loly * Shared.cellSize + Shared.cellSize/2;
-				// 	// this.wpsystem.sizeNow = 0;
-				// }
-				// if ( ( ( aNewPosX - Shared.cellSize/2 < (lolx)*Shared.cellSize ) && ( Map.data[n-1] == 0) ) ||
-				//   ( ( aNewPosX + Shared.cellSize/2 > (Math.ceil(aNewPosX/Shared.cellSize))*Shared.cellSize ) && (Map.data[n+1] == 0) ) ) {
-				// 	//clamp horizontal
-				// 	//console.log('horizontal overlap detected');
-				// 	aNewPosX = lolx * Shared.cellSize + Shared.cellSize/2;
-				// 	//console.log('new x is ' + lolx + ' * ' + Shared.cellSize + ' + ' + Shared.cellsize/2);
-				// 	// this.wpsystem.sizeNow = 0;
-				// }
-
 
 				this.setPos(aNewPosX,aNewPosY);
 
-
-				//waypoints remain the same, because haven't actually reached the next waypoint yet, only got closer/nearer
 			} 
 			/*
-				you can make it one step
-				you can make it in self tick, and you might even have left over ( if distThere != allowedDistance && distThere < allowedDistance )
+				you _WILL_ reach the goal, and might have excess fuel/speed for new goal.
 			*/
 			else {
-				//FINAL STEP TO DEST, FETCH A NEW LINE TO MOVE ALONG.
-				var lolx = Util.getTileFromReal(destx);
-				var loly = Util.getTileFromReal(desty);
-				var n = Util.twoarrayToone(lolx,loly);
-				/*
-				check outer planes of new position ( bound box ) are beyond the sitting in tiles' boundary and that offending tile is a collision tile
-				*/
-				// if ( ( ( desty - Shared.cellSize/2 < (loly)*Shared.cellSize ) && ( Map.data[n-Shared.gridWidth] == 0) ) ||
-				//   ( ( desty + Shared.cellSize/2 > (Math.ceil(desty/Shared.cellSize))*Shared.cellSize ) && (Map.data[n+Shared.gridWidth] == 0) ) ) {
-				// 	//clamp vertical
-				// 	//console.log('vertical overlap detected');
-				// 	desty = loly * Shared.cellSize + Shared.cellSize/2;
-				// 	// this.wpsystem.sizeNow = 0;
-				// }
-				// if ( ( ( destx - Shared.cellSize/2 < (lolx)*Shared.cellSize ) && ( Map.data[n-1] == 0) ) ||
-				//   ( ( destx + Shared.cellSize/2 > (Math.ceil(destx/Shared.cellSize))*Shared.cellSize ) && (Map.data[n+1] == 0) ) ) {
-				// 	//clamp horizontal
-				// 	//console.log('horizontal overlap detected');
-				// 	destx = lolx * Shared.cellSize + Shared.cellSize/2;
-				// 	//console.log('new x is ' + lolx + ' * ' + Shared.cellSize + ' + ' + Shared.cellsize/2);
-				// 	// this.wpsystem.sizeNow = 0;
-				// }
 
-				this.setPos(destx,desty); // tweak self .. you need interpolate carefully.
+				
+				this.setPos(destx,desty);
 			
-
-
 				if (this.wpsystem.finalGoal) {
 					console.log("final goal reached");
 					//prevents further steps
 					this.wpsystem.inProgress = false;
 					return;
 				}
-				if ( distThere < allowedDistance ) {
-
+				let distRemain = allowedDistance - distThere;
+				if ( distRemain > 0 ) {
 					//surplass energy this frame.
-					var distRemain = allowedDistance - distThere;
 					this.moveStraight(distRemain);
 				}
 
@@ -136,8 +93,58 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line']
 
 		};
 
+		/*
+			Before settings its position, center it so it behaves nicely close to other objects.
+			Fixes the _Overlapping_ problem.
+		*/
 		this.newUnit.prototype.setPos = function (x,y) 
 		{
+			/*
+				If any of these points contain collision, we center.
+			*/
+
+			let bCenterHori = false;
+			let bCenterVert = false;
+			//bottom-left of unit's new position.
+			let clearanceTile = Util.getClearanceTileFromXY(x,y,this.size);
+			//lower horizontal edge
+			for (let i=0;i<this.size;i++) {
+				if ( Path.clearance[clearanceTile-Shared.gridWidth+i] < this.size) {
+					bCenterHori = true;
+					break;
+				}
+			}
+			if (!bCenterHori) {
+				//upper horizontal edge
+				for (let i=0;i<this.size;i++) {
+					if (Path.clearance[clearanceTile+(this.size-1)*Shared.gridWidth+i] < this.size) {
+						bCenterHori = true;
+						break;
+					}
+				}
+			}
+			//left vertical edge
+			for (let i=0;i<this.size;i++) {
+				if (Path.clearance[clearanceTile+Shared.gridWidth*i] < this.size) {
+					bCenterVert = true;
+					break;
+				}
+				
+			}
+			if (!bCenterVert) {
+				//right vertical edge
+				for (let i=0;i<this.size;i++) {
+					if (Path.clearance[clearanceTile+Shared.gridWidth*i+(this.size-1)] < this.size) {
+						bCenterVert = true;
+						break;
+					}
+				}
+			}
+
+			// if (bCenterVert) y = ~~(y)+Shared.cellSize*0.5;
+			// if (bCenterHori) x = ~~(x)+Shared.cellSize*0.5;
+
+
 			//console.log('old pos is ' + this.mesh.position.x);
 			//console.log('new pos is ' + x);
 			this.mesh.position.x = x;// + this.radius;

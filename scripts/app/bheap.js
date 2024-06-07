@@ -7,7 +7,7 @@ define( ['app/shared'],function (Shared){
 	//Module consturctor.
 	function Bheap() {
 		console.log('creating Heap');
-		this.theHeap = new Uint32Array(Shared.totalSize);
+		this.theHeap = new Uint32Array(Shared.gridArea);
 		this.sizeNow = 1;
 		
 		//this represents the f value?

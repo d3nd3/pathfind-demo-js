@@ -6,7 +6,7 @@ define( function () {
 		this.gridHeight = 320;
 		this.cellSize = 32; // the size of one 'cell' in a grid in gl distance.
 		this.flatground = undefined;
-		this.totalSize = this.gridWidth * this.gridHeight;
+		this.gridArea = this.gridWidth * this.gridHeight;
 	}
 	return new Shared();
 });

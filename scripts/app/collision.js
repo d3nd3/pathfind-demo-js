@@ -25,7 +25,8 @@ define( ['app/line','app/shared','app/util','app/map','app/path'],function (Line
 			Return Value:
 				It returns the walkable flag, which indicates whether a walkable path exists between the two rectangles.
 		*/
-		this.lineRect = function (rect1x,rect1y,rect2x,rect2y,size) {
+		this.lineRect = function (rect1x,rect1y,rect2x,rect2y,size,apply) {
+			let radi = size*0.5;
 			/*
 				Conundurum:
 				  Do we support only center of tiles, tile aligned?
@@ -40,7 +41,6 @@ define( ['app/line','app/shared','app/util','app/map','app/path'],function (Line
 			var i;
 
 			//get TOPLEFT of each 'agent'
-			var s = size* 0.5;
 			
 
 			//1,4,8,12
@@ -54,14 +54,14 @@ define( ['app/line','app/shared','app/util','app/map','app/path'],function (Line
 			//clockwise
 			var walkable = true;
 			if (size == 1) {
-				if ( !Line.isWalkable(rect1x,rect1y,rect2x,rect2y) ) {
+				if ( !Line.isWalkable(rect1x,rect1y,rect2x,rect2y,apply) ) {
 					walkable = false;
 				}
 			} else {
-				let rect1KK = rect1x - s * c;
-				let rect2KK = rect2x - s * c;
-				let rect1LL = rect1y + s * c;
-				let rect2LL = rect2y + s * c;
+				let rect1KK = rect1x - radi * c;
+				let rect2KK = rect2x - radi * c;
+				let rect1LL = rect1y + radi * c;
+				let rect2LL = rect2y + radi * c;
 
 				for ( i = 0 ; i < size*2; i+=2 ) {
 					//top
@@ -139,208 +139,6 @@ define( ['app/line','app/shared','app/util','app/map','app/path'],function (Line
 			return walkable;
 		};
 
-
-		//centers an object into a tile
-		this.boundRect = function (locX,locY,unit,outArr,clearanceTile) {
-			var ret = false;
-
-			outArr[0] = locX;
-			outArr[1] = locY;
-			var lolx = Util.getTileFromReal(locX);
-			var loly = Util.getTileFromReal(locY);
-			var n = Util.twoarrayToone(lolx,loly);
-			var s = unit.size;
-
-			//check top left tile's clearance value
-			if ( Path.clearance[Util.twoarrayToone(lolx - unit.radius,loly + unit.radius)] < s) {
-				console.log('Hey , Cannot fit there!');
-				//DO NOT SNAP BECAUSE ITS NOT A VALID LOCATION, HERE MUST DO A FLOOD FILL
-				return ret;
-			}
-
-			
-			var r = unit.radius;
-
-			//array of booleans
-			var bb = [];
-
-			var i;
-			var j = 0;
-
-			//translate to top outside!!! left most hmmm
-			n = n + (Shared.gridWidth *(r + 1)) - r;
-			//clockwise
-			for ( i = 0 ; i < s; i++ ) {
-				//top
-				//large static y
-				//dynamic increasing x
-				bb[j+i] = (Map.data[n+i] == 0);
-				//move across horizontal right
-				n++;
-			}
-			j +=s;
-
-			//DIAGONAL SNAP TEST HERE (TOP RIGHT)
-			bb[j] = ( Map.data[n] == 0 )
-			j++;
-			//translate down 1 tile
-			n = n - Shared.gridWidth;
-			for ( i = 0 ; i < s; i++ ) {
-				//right
-				//large static x
-				//dynamic decreasing y
-				bb[j+i] = (Map.data[n-(Shared.gridWidth * i)] == 0);
-				//move vertical down
-				n = n - Shared.gridWidth;
-			}
-			j +=s;
-
-			//DIAGONAL SNAP TEST HERE (BOTTOM RIGHT)
-			bb[j] = ( Map.data[n] == 0 )
-			j++;
-			//translate left 1 tile
-			n = n - 1;
-			for ( i = 0 ; i < s; i++ ) {
-				//bottom
-				//small static y
-				//dynamic decreasing x
-				bb[j+i] = (Map.data[n-i] == 0);
-				//move horizontal left
-				n = n - 1;
-			}
-			j +=s;
-
-			//DIAGONAL SNAP TEST HERE (BOTTOM LEFT)
-			bb[j] = ( Map.data[n] == 0 )
-			j++;
-			//translate up 1 tile
-			n = n + Shared.gridWidth;
-			
-			for ( i = 0 ; i < s; i++ ) {
-				//left
-				//small static x
-				//dynamic increasing y
-				bb[j+i] = (Map.data[n+(Shared.gridWidth * i)] == 0);
-				n = n + Shared.gridWidth;
-			}
-			j +=s;
-			//DIAGONAL SNAP TEST HERE (TOP LEFT)
-			bb[j] = ( Map.data[n] == 0 )
-			j++;
-			
-			
-			var aa = [];
-			Util.getCenterReal(lolx,loly,1,aa);
-
-			var a = unit.size*0.5 * Shared.cellSize;
-			/*
-			check outer planes of new position ( bound box ) are beyond the sitting in tiles' boundary and that offending tile is a collision tile
-			*/
-			//if outer edge overlaps into a bad tile
-
-			//top
-			var ex = false;
-			var top = 0,bot = 0,right = 0, left = 0;
-			top = (locY + a) - (loly+1+r)*Shared.cellSize;
-			if ( top > 0 ) {
-				for ( i = 0; i < s; i++ ) {
-					 if (bb[i]) {
-					 	ex = true;
-					 	break;
-					 }
-				}
-				if ( ex == true ) {
-					console.log('snapping detected above collision');
-					outArr[1] = aa[1]- 0.1 * Shared.cellSize;
-					ret = true;
-				}
-			} else {
-				//bottom
-				bottom = (loly-r)*Shared.cellSize - (locY - a); 
-				if ( bottom > 0 ) {
-					for ( i = 0; i < s; i++ ) {
-						 if (bb[s*2+2+i]) {
-						 	ex = true;
-						 	break;
-						 }
-					}
-					if ( ex == true ) {
-						console.log('snapping detected below collision');
-						outArr[1] = aa[1] + 0.1 * Shared.cellSize;
-						ret = true;
-					}
-				}
-			}
-
-			//right
-			ex = false;
-			right = (locX + a) - (lolx+1+r)*Shared.cellSize;
-			if (  right > 0 ) {
-				for ( i = 0; i < s; i++ ) {
-					 if (bb[s+1+i]) {
-					 	ex = true;
-					 	break;
-					 }
-				}
-				if ( ex == true ) {
-					console.log('snapping detected right collision');
-					outArr[0] = aa[0] - 0.1 * Shared.cellSize;
-					ret = true;
-				}
-			} else {
-				//left
-				left =  (lolx-r)*Shared.cellSize - (locX - a);
-				if ( left > 0 ) {
-					for ( i = 0; i < s; i++ ) {
-						 if (bb[s*3+3+i]) {
-						 	ex = true;
-						 	break;
-						 }
-					}
-					if ( ex == true ) {
-						console.log('snapping detected left collision');
-						outArr[0] = aa[0] + 0.1 * Shared.cellSize;
-						ret = true;
-					}
-				}
-			}
-
-			if ( top > 0 && right > 0 && bb[s] ) {
-				// console.log('detected TOP-RIGHT baby!');
-				// console.log('right =  ' + right);
-				// console.log('top =  ' + top);
-				if ( top < right ) {
-					outArr[1] = aa[1] - 0.1 * Shared.cellSize;
-				} else
-				{
-					outArr[0] = aa[0] - 0.1 * Shared.cellSize;
-				}
-				// outArr[0] = aa[0] - 0.1 * Shared.cellSize;
-				// outArr[1] = aa[1] - 0.1 * Shared.cellSize;
-				ret = true;
-			}
-			if ( bot > 0 && right > 0 && bb[2*s+1]) {
-				// console.log('detected BOT-RIGHT baby!');
-				// outArr[0] = aa[0] - 0.1 * Shared.cellSize;
-				// outArr[1] = aa[1] + 0.1 * Shared.cellSize;
-				ret = true;
-			}
-			if ( bot > 0 && left > 0 && bb[3*s+2]) {
-				// console.log('detected BOT-LEFT baby!');
-				// outArr[0] = aa[0] + 0.1 * Shared.cellSize;
-				// outArr[1] = aa[1] + 0.1 * Shared.cellSize;
-				ret = true;
-			}
-			if ( top > 0 && left > 0 && bb[4*s+3]) {
-				// console.log('detected TOP-LEFT baby!');
-				// outArr[0] = aa[0] + 0.1 * Shared.cellSize;
-				// outArr[1] = aa[1] - 0.1 * Shared.cellSize;
-				ret = true;
-			}
-			// console.log('return is ' + ret);
-			return ret;
-			
-		};
 
 		this.pointInPolygon = function(vertArray,px,py) {
 			var bbox = new THREE.Box3().setFromPoints(vertArray);

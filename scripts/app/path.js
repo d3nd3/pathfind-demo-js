@@ -43,34 +43,34 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 		
 		
 		var self = this;
-		var t = Shared.totalSize;
+		var gridArea = Shared.gridArea;
 
 		//The pointing best path
-		this.parent = new Uint32Array(t);
+		this.parent = new Uint32Array(gridArea);
 
 		//16bit - //1d mappings to column/row mappings cached.
-		this.x = new Uint16Array(t);
-		this.y = new Uint16Array(t);
+		this.x = new Uint16Array(gridArea);
+		this.y = new Uint16Array(gridArea);
 
 		//32bit
-		this.timestamp = new Uint32Array(t);
+		this.timestamp = new Uint32Array(gridArea);
 
 		//f value
-		this.f = new Float32Array(t);
+		this.f = new Float32Array(gridArea);
 
 		//g value
-		this.g = new Float32Array(t);
+		this.g = new Float32Array(gridArea);
 
 		//h value
-		this.h = new Float32Array(t);
+		this.h = new Float32Array(gridArea);
 		
 
 		//8bit
-		this.onHeap = new Uint8Array(t); 
+		this.onHeap = new Uint8Array(gridArea); 
 
-		this.occupied = new Uint8Array(t); // occcupied bool
+		this.occupied = new Uint8Array(gridArea); // occcupied bool
 		// clearance size - how large agent can access this square.
-		this.clearance = new Uint8Array(t); 
+		this.clearance = new Uint8Array(gridArea); 
 
 		this.nonDiagMoveCost = 1;
 		this.diagMoveCost = Math.sqrt(2);
@@ -83,19 +83,19 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 		//Clearance used for allow agents of different size.
 		var maxClearance = 6;
 		var stop;
-		var m;
+		let mapNodeOffset;
 		var z;
 		//iterating totalSize
-		for ( var o = 0;o < t;o++ ) {
+		for ( let mapNode = 0;mapNode < gridArea;mapNode++ ) {
 
 			//1d mappings to column/row mappings cached.
-			this.x[o] = o % Shared.gridWidth; //remainder
+			this.x[mapNode] = mapNode % Shared.gridWidth; //remainder
 			//total - remainder , TODO:(just do division then round to int)
-			this.y[o] = (o - this.x[o]) / Shared.gridWidth; 
+			this.y[mapNode] = (mapNode - this.x[mapNode]) / Shared.gridWidth; 
 			
 			stop = false;
 			//if this 1d position is empty space
-			if ( Map.data[o] == 1 ) {
+			if ( Map.emptySpace[mapNode] == 1 ) {
 				/*
 					Searches for clearance:
 					  x,y
@@ -121,10 +121,11 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 						//0,1,2 ... 0,1,2,3 ... 0,1,2,3,4 ... 0,1,2,3,4,5
 						for ( var f = 0; f < h; f++ ) {
 							//column-f_column ... to 1d + row + e_row
-							m = (this.y[o]-f) * Shared.gridWidth + this.x[o] + e;
+							//lets use lowest x and y first, so bottom-left.
+							mapNodeOffset = (this.y[mapNode]+f) * Shared.gridWidth + this.x[mapNode] + e;
 
 							//if that 1d position has cliff/collision
-							if ( m != o && Map.data[m] == 0 ) {
+							if ( mapNodeOffset != mapNode && Map.emptySpace[mapNodeOffset] == 0 ) {
 								//invalidate current h.
 								stop = true;
 							}
@@ -140,11 +141,11 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				/*
 					I think this is measuring whether a larger unit can fit in the square.
 				*/
-				this.clearance[o] = h-1;
+				this.clearance[mapNode] = h-1;
 			} else
 			{
 				//this 1d position is cliff/collision
-				this.clearance[o] = 0;
+				this.clearance[mapNode] = 0;
 			}		
 		}
 
@@ -171,15 +172,15 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 			let visitedNodesCount = 0;
 			let numTimeBreakers = 0;
 
+			/*
+				Check if destinatinon is out of bounds.
+			*/
+
 
 
 			//translate center to top left
 			var size = unit.size;
 
-			/*if ( this.clearance[goal] < size ) {
-				console.log('you cant go there mr.orc!');
-				return Shared.totalSize;
-			}*/
 
 			//reset Heap
 			Heap.sizeNow = 1;
@@ -193,7 +194,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				h(n) is the heuristic
 			*/
 			//the initial node will be trusted so give it acceptable values
-			this.parent[start] = Shared.totalSize; // why???
+			this.parent[start] = Shared.gridArea; // why???
 
 			//cost
 			this.g[start] = 0;
@@ -219,7 +220,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				So the heap indices will be sorted by values in Path.f[].
 			*/
 
-			var lowestHNode = Shared.GridSize;
+			var lowestHNode = Shared.gridArea;
 
 			// Iterate the elements ON the heap (aren't these just unvisited nodes?)
 			// Every iteration it collects more univisited nodes, because they are just 'neighbours' of startNode.
@@ -258,8 +259,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				Heap.deinsert(heapIdx);
 
 				// use space to remove.
-				// Grid.appearDebugCube(this.x[thisNode],this.y[thisNode],0x00ff00);
-				// visitedNodes.push([this.x[thisNode],this.y[thisNode]]);
+
 				visitedNodesCount++;
 				//Instead of clearing all data, we use a counter to know if _FRESH_.
 				// Date.now() & 0x3FFFFFFF
@@ -268,16 +268,6 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 
 				// Have we selected the node that is the goal?
 				if ( thisNode == goal ) {
-					
-					/*
-					for (const node of visitedNodes) {
-						Grid.appearDebugCube(node[0],node[1],0x00ff00);
-					}
-
-					for (const node of unvisitedNodes) {
-						Grid.appearDebugCube(node[0],node[1],0xff0000);
-					}
-					*/
 					console.log(`found the goal : ${performance.now()-before} ... UV: ${unvisitedNodesCount}, V: ${visitedNodesCount} , TB: ${numTimeBreakers}`);
 					return goal;
 				}
@@ -291,7 +281,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				*/
 				unvisitedNodes = [];
 
-				//visualization
+				//visualization / paint
 				/*
 				await new Promise((resolve,reject)=> {
 					setTimeout(()=>{
@@ -316,7 +306,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 						//or diagonal off map
 						// ---> skip
 						if ( 
-							Map.data[n] == 0 
+							Map.emptySpace[n] == 0 
 							|| (this.clearance[n] < size) 
 							|| ( i > 3 && getNodeWhere[i][2](size,thisNode))
 						)
@@ -360,7 +350,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 							this.f[n] = this.g[n] + this.h[n];
 
 							// This will be returned if goal not found.
-							if ( lowestHNode == Shared.gridSize || this.h[n] < this.h[lowestHNode] ) {
+							if ( lowestHNode == Shared.gridArea || this.h[n] < this.h[lowestHNode] ) {
 								lowestHNode = n;
 							}
 							
@@ -387,15 +377,14 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				}
 				// Heap.dump();
 			} // end while loop a*
-			
+			console.log(`using heuristic instead : ${performance.now()-before} ... UV: ${unvisitedNodesCount}, V: ${visitedNodesCount} , TB: ${numTimeBreakers}`);
 			// the goal was not found, so return lowest H node instead.
 			return lowestHNode;
 		};
 
 		//0 get node
 		//1 cost
-		//2 offset y
-		//3 offset x
+		//2 can pass diagonal
 		var getNodeWhere = [
 			[
 				//down
@@ -447,10 +436,10 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				},
 				this.diagMoveCost*this.scale,
 				function ( soize,fromNode ) {
-					return (	Map.data[fromNode+(((-1 - soize) *Shared.gridWidth) + (soize-1) )] == 0 || //southern 2
-								Map.data[fromNode+(((-1 - soize) *Shared.gridWidth) )] == 0 ||
-								Map.data[fromNode -1] == 0 || //western 2
-								Map.data[fromNode-((soize-1) *Shared.gridWidth)  -1] == 0);
+					return (	Map.emptySpace[fromNode+(((-1 - soize) *Shared.gridWidth) + (soize-1) )] == 0 || //southern 2
+								Map.emptySpace[fromNode+(((-1 - soize) *Shared.gridWidth) )] == 0 ||
+								Map.emptySpace[fromNode -1] == 0 || //western 2
+								Map.emptySpace[fromNode-((soize-1) *Shared.gridWidth)  -1] == 0);
 				}
 
 			],
@@ -464,10 +453,10 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				},
 				this.diagMoveCost*this.scale,
 				function ( soize,fromNode ) {
-					return (	Map.data[fromNode+Shared.gridWidth] == 0 || //northern 2
-								Map.data[fromNode+Shared.gridWidth + (soize-1)] == 0 ||
-								Map.data[fromNode + soize] == 0 || //eastern 2
-								Map.data[fromNode-((soize-1) *Shared.gridWidth)  +soize] == 0);
+					return (	Map.emptySpace[fromNode+Shared.gridWidth] == 0 || //northern 2
+								Map.emptySpace[fromNode+Shared.gridWidth + (soize-1)] == 0 ||
+								Map.emptySpace[fromNode + soize] == 0 || //eastern 2
+								Map.emptySpace[fromNode-((soize-1) *Shared.gridWidth)  +soize] == 0);
 				}
 
 			],
@@ -481,10 +470,10 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				},
 				this.diagMoveCost*this.scale,
 				function ( soize,fromNode ) {
-					return (	Map.data[fromNode+(((-1 - soize) *Shared.gridWidth) + (soize-1) )] == 0 || //southern 2
-								Map.data[fromNode+(((-1 - soize) *Shared.gridWidth) )] == 0 ||
-								Map.data[fromNode + soize] == 0 || //eastern 2
-								Map.data[fromNode-((soize-1) *Shared.gridWidth)  +soize] == 0);
+					return (	Map.emptySpace[fromNode+(((-1 - soize) *Shared.gridWidth) + (soize-1) )] == 0 || //southern 2
+								Map.emptySpace[fromNode+(((-1 - soize) *Shared.gridWidth) )] == 0 ||
+								Map.emptySpace[fromNode + soize] == 0 || //eastern 2
+								Map.emptySpace[fromNode-((soize-1) *Shared.gridWidth)  +soize] == 0);
 				}
 			],
 			[
@@ -497,10 +486,10 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				},
 				this.diagMoveCost*this.scale,
 				function ( soize,fromNode ) {
-					return (	Map.data[fromNode+Shared.gridWidth] == 0 || //northern 2
-								Map.data[fromNode+Shared.gridWidth + (soize-1)] == 0 ||
-								Map.data[fromNode -1] == 0 || //western 2
-								Map.data[fromNode-((soize-1) *Shared.gridWidth)  -1] == 0);
+					return (	Map.emptySpace[fromNode+Shared.gridWidth] == 0 || //northern 2
+								Map.emptySpace[fromNode+Shared.gridWidth + (soize-1)] == 0 ||
+								Map.emptySpace[fromNode -1] == 0 || //western 2
+								Map.emptySpace[fromNode-((soize-1) *Shared.gridWidth)  -1] == 0);
 				}
 			]
 		];

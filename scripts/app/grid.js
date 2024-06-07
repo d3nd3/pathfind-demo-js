@@ -24,10 +24,10 @@
 		//geom is applied to mesh, now in mesh.geometry
 		var mesh = new THREE.Mesh( geom, mat );
 		//this creates a grid shape, all y's for each x
-		for ( var i=0;i<Shared.totalSize;i++ )
+		for ( var i=0;i<Shared.gridArea;i++ )
 		{
 			
-			if ( Map.data[i] == 0) {
+			if ( Map.emptySpace[i] == 0) {
 				color.setHex(0x000000);
 			} else
 			{
@@ -65,7 +65,7 @@
 		Gl.camera.position.y = Shared.cellSize * Shared.gridHeight/2;
 
 		this.appearDebugCube = function(x,y,color,size,offset) {
-			console.log("appearDebugCube");
+			// console.log("appearDebugCube");
 			Gl.debugObjs.push(this.appearCube(x,y,color,size,offset));
 		}
 		this.appearDebugCubeReal = function(x,y,color,size,offset) {

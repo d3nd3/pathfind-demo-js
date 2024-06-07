@@ -22,7 +22,7 @@ define(['app/shared','app/path','app/map','app/util','app/path','app/gl','app/sh
 				It enters a loop that iterates for the calculated number of steps.
 				In each step, it does the following:
 				Converts the current grid coordinates into a single index (n) for accessing path and map data.
-				Checks if the current cell is occupied or unpassable (using Path.occupied and Map.data). If so, it returns false
+				Checks if the current cell is occupied or unpassable (using Path.occupied and Map.emptySpace). If so, it returns false
 				 (path not walkable).
 				Uses the error term to decide whether to move horizontally or vertically towards the destination,
 				 updating the current grid cell (x, y) and the error term.
@@ -30,7 +30,7 @@ define(['app/shared','app/path','app/map','app/util','app/path','app/gl','app/sh
 			Success:
 			If the loop completes without encountering any obstacles, it returns true (path is walkable).
 		*/
-		this.isWalkable = function ( fromx,fromy,tox,toy) {
+		this.isWalkable = function ( fromx,fromy,tox,toy,apply) {
 			var dx = Math.abs(tox - fromx);
 			var dy = Math.abs(toy - fromy);
 				
@@ -91,25 +91,27 @@ define(['app/shared','app/path','app/map','app/util','app/path','app/gl','app/sh
 			// numberOfSteps = Math.ceil(numberOfSteps/Shared.cellSize) + 1;
 			for (; numberOfSteps > 0; --numberOfSteps)
 			{
+				
 				//visit(x, y);
 				var n = Util.twoarrayToone(x,y);
-				
+				let endEarly = false;
+				if (apply) {
 
-				var m = Shapes.cube(8);
+					endEarly = apply(x*Shared.cellSize,y*Shared.cellSize,n);
+					if (endEarly) return;
+				} else {
+					var m = Shapes.cube(8);
 
-				// Gl.debugObjs.push(m);
-				// m.position.x = Path.x[n] * Shared.cellSize + Shared.cellSize/2;
-				// m.position.y = Path.y[n] * Shared.cellSize + Shared.cellSize/2;
-				// Gl.scene.add(m);
+					// Gl.debugObjs.push(m);
+					// m.position.x = Path.x[n] * Shared.cellSize + Shared.cellSize/2;
+					// m.position.y = Path.y[n] * Shared.cellSize + Shared.cellSize/2;
+					// Gl.scene.add(m);
 
-
-				
-
-
-				// console.log('visitted x = ' + x + ' and y = ' + y);
-				if ( Path.occupied[n] == true || Map.data[n] == 0 ) {
-					//console.log("The straight line path intersects with a collision tile")
-					return false;
+					// console.log('visitted x = ' + x + ' and y = ' + y);
+					if ( Path.occupied[n] == true || Map.emptySpace[n] == 0 ) {
+						//console.log("The straight line path intersects with a collision tile")
+						return false;
+					}
 				}
 
 				//move into a next grid, either horizontal or vertical
@@ -206,7 +208,7 @@ define(['app/shared','app/path','app/map','app/util','app/path','app/gl','app/sh
 
 
  //        	// console.log('visitted x = ' + x + ' and y = ' + y);
-	//         if ( Path.occupied[n] == true || Map.data[n] == 0 ) {
+	//         if ( Path.occupied[n] == true || Map.emptySpace[n] == 0 ) {
 	//         	console.log('ahhhh a black square!');	        	
 	//         	return false;
 	//         }
