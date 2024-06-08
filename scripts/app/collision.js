@@ -32,7 +32,7 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 		const EDGE_LEFT = 3;
 
 
-		const PADDING = 0.2;
+		const PADDING = 0.5;
 
 		/*
 			The points here are in 1d index format
@@ -43,6 +43,7 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 			let points = [];
 			switch (direction) {
 				case EDGE_UP:
+					// for (let i=1;i<size+1;i++) {
 					for (let i=1;i<size;i++) {
 						
 						points.push(startPoint + Shared.gridWidth*i);
@@ -50,18 +51,22 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					
 				break;
 				case EDGE_DOWN:
+					// for (let i=1;i<size+1;i++) {
 					for (let i=1;i<size;i++) {
 						points.push(startPoint - Shared.gridWidth*i);
 					}
 					
 				break;
 				case EDGE_LEFT:
+
+					// for (let i=1;i<size+1;i++) {
 					for (let i=1;i<size;i++) {
 						points.push(startPoint - i);
 					}
 					
 				break;
 				case EDGE_RIGHT:
+					// for (let i=1;i<size+1;i++) {
 					for (let i=1;i<size;i++) {
 						points.push(startPoint + i);
 					}
@@ -72,9 +77,13 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 			return points;
 		};
 
+		/*
+			Uncomment for vertice aligned.
+		*/
 		let getPointsForPosition = function(dx,dy,cTile,size) {
 			let points = [];
 			if (dx > 0) {
+				//Xright
 				if (dy > 0) {
 					//top-right
 					startPoint = cTile + size * Shared.gridWidth + size;
@@ -82,10 +91,14 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					startVert = {point: startVert, paddingX:-1,paddingY:-1};
 
 					let topVerts = acquireVertices(startPoint,EDGE_LEFT,size);
-					topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
+					topVerts = topVerts.map(point => ({ point, paddingX: -1,paddingY:-1 }));
+					// topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
+					// topVerts[topVerts.length-1].paddingX = 1;
 
 					let rightVerts = acquireVertices(startPoint,EDGE_DOWN,size);
-					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
+					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:-1 }));
+					// rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
+					// rightVerts[rightVerts.length-1].paddingY = 1;
 
 					points.push(...topVerts,startVert,...rightVerts);
 				} else {
@@ -95,15 +108,20 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					startVert = {point: startVert, paddingX:-1, paddingY: 1};
 
 					let rightVerts = acquireVertices(startPoint,EDGE_UP,size);
-					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
+					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:1 }));
+					// rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
+					// rightVerts[rightVerts.length-1].paddingY = -1;
 
 					let botVerts = acquireVertices(startPoint,EDGE_LEFT,size);
-					botVerts = botVerts.map(point => ({ point, paddingX: 0,paddingY:1 }));
+					botVerts = botVerts.map(point => ({ point, paddingX: -1,paddingY:1 }));
+					// botVerts = botVerts.map(point => ({ point, paddingX: 0,paddingY:1 }));
+					// botVerts[botVerts.length-1].paddingX = 1;
 
 					points.push(...botVerts,startVert,...rightVerts);
 				}
 				
 			} else {
+				//Xleft
 				if (dy > 0) {
 					//top-left
 					startPoint = cTile + size * Shared.gridWidth;
@@ -111,11 +129,15 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					startVert = {point: startVert, paddingX:1,paddingY:-1};
 
 					let leftVerts = acquireVertices(startPoint,EDGE_DOWN,size);
-					leftVerts = leftVerts.map(point => ({ point, paddingX: 1,paddingY:0 }));
+					leftVerts = leftVerts.map(point => ({ point, paddingX: 1,paddingY:-1 }));
+					// leftVerts = leftVerts.map(point => ({ point, paddingX: 1,paddingY:0 }));
+					// leftVerts[leftVerts.length-1].paddingY = 1;
 
 					let topVerts = acquireVertices(startPoint,EDGE_RIGHT,size);
-					topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
-					
+					topVerts = topVerts.map(point => ({ point, paddingX: 1,paddingY:-1 }));
+					// topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
+					// topVerts[topVerts.length-1].paddingX = -1;
+
 					points.push(...topVerts,startVert,...leftVerts);
 				} else {
 					//bottom-left
@@ -123,11 +145,15 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					let startVert = startPoint;
 					startVert = {point: startVert, paddingX: 1,paddingY: 1};
 
-					let leftVerts = acquireVertices(startPoint,EDGE_UP,PADDING,size);
-					leftVerts = leftVerts.map(point => ({ point, paddingX:1,paddingY:0 }));
+					let leftVerts = acquireVertices(startPoint,EDGE_UP,size);
+					leftVerts = leftVerts.map(point => ({ point, paddingX:1,paddingY:1 }));
+					// leftVerts = leftVerts.map(point => ({ point, paddingX:1,paddingY:0 }));
+					// leftVerts[leftVerts.length-1].paddingY = -1;
 
 					let botVerts = acquireVertices(startPoint,EDGE_RIGHT,size);
-					botVerts = botVerts.map(point => ({ point, paddingX:0,paddingY:1 }));
+					botVerts = botVerts.map(point => ({ point, paddingX:1,paddingY:1 }));
+					// botVerts = botVerts.map(point => ({ point, paddingX:0,paddingY:1 }));
+					// botVerts[botVerts.length-1].paddingX = -1;
 
 					points.push(...botVerts,startVert,...leftVerts);
 				}
@@ -165,20 +191,15 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 				let startPoints = getPointsForPosition(dx,dy,sClearanceTile,size);
 				let destPoints = getPointsForPosition(dx,dy,dClearanceTile,size);
 
-				console.log(`startPoints: ${startPoints.length}`);
 				for (let i = 0; i < startPoints.length; i++) {
 					let point1 = startPoints[i];
 					let point2 = destPoints[i];
 
-
-					console.log(`Where NaN : ${Path.x[point1.point]} ${Path.y[point1.point]} ${Path.x[point2.point]} ${Path.y[point2.point]}`);
 					let point1X = (Path.x[point1.point] + point1.paddingX*PADDING) * Shared.cellSize;
 					let point1Y = (Path.y[point1.point] + point1.paddingY*PADDING) * Shared.cellSize;
 					let point2X = (Path.x[point2.point] + point2.paddingX*PADDING) * Shared.cellSize;
 					let point2Y = (Path.y[point2.point] + point2.paddingY*PADDING) * Shared.cellSize;
 
-					console.log(`No Nan : ${point1.paddingX}, ${point1.paddingY} ${point2.paddingX} ${point2.paddingY}`);
-					console.log(`Here NaN : ${point1X} ${point1Y} ${point2X} ${point2Y}`);
 					let tube = Shapes.tube(point1X,point1Y,point2X,point2Y,1);
 					Gl.tubeObjs.push(tube);
 					Gl.scene.add(tube);

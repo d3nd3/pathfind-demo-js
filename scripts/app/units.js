@@ -38,7 +38,7 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 			//Even though it reached it.
 
 
-			console.log(`Destx: ${destx} Desty: ${desty}`);
+			// console.log(`Destx: ${destx} Desty: ${desty}`);
 			var dx = destx - this.mesh.position.x;
 			var dy = desty - this.mesh.position.y;
 

@@ -31,8 +31,8 @@
 				color.setHex(0x000000);
 			} else
 			{
-				color.setHex(Math.random() * 0xffffff);
-				// color.setHex(0xffffff);
+				// color.setHex(Math.random() * 0xffffff);
+				color.setHex(0xffffff);
 			}
 
 			
@@ -77,7 +77,7 @@
 			var geometry = new THREE.BoxGeometry(size,size,size);
 			var material = new THREE.MeshBasicMaterial( {color: color} );
 			var sphere = new THREE.Mesh( geometry, material );
-			sphere.position.set(x * Shared.cellSize + Shared.cellSize/2, y * Shared.cellSize + Shared.cellSize/2,Shared.cellSize/2*offset);
+			sphere.position.set(x * Shared.cellSize + Shared.cellSize/2, y * Shared.cellSize + Shared.cellSize/2,offset);
 			Gl.scene.add( sphere );
 			return sphere;
 		};
@@ -87,7 +87,7 @@
 			var geometry = new THREE.BoxGeometry(size,size,size);
 			var material = new THREE.MeshBasicMaterial( {color: color} );
 			var sphere = new THREE.Mesh( geometry, material );
-			sphere.position.set(x , y ,Shared.cellSize/2*offset);
+			sphere.position.set(x , y ,offset);
 			Gl.scene.add( sphere );
 			return sphere;
 		};

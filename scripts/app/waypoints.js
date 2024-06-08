@@ -77,7 +77,7 @@ define(['app/grid','app/path','app/line','app/shared','app/map','app/util','app/
 						Gl.scene.remove(Gl.waypointObjs[b]);
 					}
 					Gl.waypointObjs.length = 0;
-					let cube = Grid.appearCube(Path.x[parentNode],Path.y[parentNode],0xffffff,32)
+					let cube = Grid.appearCube(Path.x[parentNode],Path.y[parentNode],0x00FFFF,32)
 					Gl.waypointObjs.push(cube);
 					Gl.scene.add(cube);
 

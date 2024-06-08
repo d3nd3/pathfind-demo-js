@@ -382,7 +382,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 			return lowestHNode;
 		};
 
-		//0 get node
+		//0 returns next neighbour, else null if error
 		//1 cost
 		//2 can pass diagonal
 		var getNodeWhere = [
@@ -392,7 +392,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					// don't traverse off map
 					if ( self.y[fromNode] == 0 ) return null; 
 					// decrement y value
-					return (self.y[fromNode]-1)*Shared.gridWidth + self.x[fromNode];
+					return fromNode - Shared.gridWidth;
 				},
 				this.nonDiagMoveCost*this.scale
 			],
@@ -402,7 +402,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					// don't traverse off map
 					if ( self.y[fromNode] == Shared.gridHeight-1 ) return null; 
 					// increment y value
-					return (self.y[fromNode]+1)*Shared.gridWidth + self.x[fromNode];
+					return fromNode + Shared.gridWidth;
 				},
 				this.nonDiagMoveCost*this.scale
 			],
@@ -412,7 +412,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					// don't traverse off map
 					if ( self.x[fromNode] == Shared.gridWidth-1 ) return null;
 					// increment x value
-					return self.y[fromNode]*Shared.gridWidth + self.x[fromNode] + 1;
+					return fromNode + 1;
 				},
 				this.nonDiagMoveCost*this.scale
 			],
@@ -422,7 +422,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					// don't traverse off map
 					if ( self.x[fromNode] == 0 ) return null;
 					// decrement x value
-					return self.y[fromNode]*Shared.gridWidth + self.x[fromNode] - 1;
+					return fromNode - 1;
 				},
 				this.nonDiagMoveCost*this.scale
 			],
@@ -432,7 +432,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					// don't traverse off map
 					if ( self.x[fromNode] == 0 || self.y[fromNode] == 0 ) return null;
 					// decrement x and y value
-					return (self.y[fromNode]-1)*Shared.gridWidth + self.x[fromNode] - 1;
+					return fromNode-Shared.gridWidth-1;
 				},
 				this.diagMoveCost*this.scale,
 				/*
@@ -445,7 +445,17 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 									Map.emptySpace[fromNode-1] == 0 
 						);
 					} else {
-						return ( Map.emptySpace[fromNode-Shared.gridWidth+(soize-1)] == 0);
+						//true=skip .. why is this not working?? None of these are working.hm
+						/*
+						console.log(Map.emptySpace[fromNode-Shared.gridWidth+(soize-1)]);
+						if (Map.emptySpace[fromNode-Shared.gridWidth+(soize-1)] == 0) {
+							Grid.appearDebugCube(self.x[fromNode],self.y[fromNode],0x00FF00,16,40);
+							Grid.appearDebugCube(self.x[fromNode-Shared.gridWidth+(soize-1)],self.y[fromNode-Shared.gridWidth+(soize-1)],0xFF0000,32);
+						}
+						*/
+						return ( Map.emptySpace[fromNode-Shared.gridWidth+(soize-1)] == 0 ||
+								Map.emptySpace[fromNode+Shared.gridWidth*(soize-1)-1] == 0
+							);
 					}
 					
 				}
@@ -457,7 +467,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					// don't traverse off map
 					if ( self.x[fromNode] == Shared.gridWidth-1 || self.y[fromNode] == Shared.gridHeight-1 ) return null;
 					// increment x and y value
-					return (self.y[fromNode]+1)*Shared.gridWidth + self.x[fromNode] + 1;
+					return fromNode+Shared.gridWidth+1;
 				},
 				this.diagMoveCost*this.scale,
 				/*
@@ -472,8 +482,13 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 									Map.emptySpace[fromNode+1] == 0
 						);
 					} else {
+						// if (Map.emptySpace[fromNode+Shared.gridWidth*soize] == 0) {
+						// 	Grid.appearDebugCube(self.x[fromNode],self.y[fromNode],0x00FF00,16,40);
+						// 	Grid.appearDebugCube(self.x[fromNode+Shared.gridWidth*soize],self.y[fromNode+Shared.gridWidth*soize],0xFF0000,32);
+						// }
 						return (
-								Map.emptySpace[fromNode+Shared.gridWidth*soize] == 0
+								Map.emptySpace[fromNode+Shared.gridWidth*soize] == 0 ||
+								Map.emptySpace[fromNode+soize] == 0
 						);
 					}
 				}
@@ -485,7 +500,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					// don't traverse off map
 					if ( self.x[fromNode] == Shared.gridWidth-1 || self.y[fromNode] == 0 ) return null;
 					// increment x value , decremeent y value
-					return (self.y[fromNode]-1)*Shared.gridWidth + self.x[fromNode] + 1;
+					return fromNode-Shared.gridWidth+1;
 				},
 				this.diagMoveCost*this.scale,
 				/*
@@ -499,7 +514,8 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 								);
 					} else {
 						return (
-							Map.emptySpace[fromNode-Shared.gridWidth] == 0
+							Map.emptySpace[fromNode-Shared.gridWidth] == 0 ||
+							Map.emptySpace[fromNode+Shared.gridWidth*(soize-1)+soize] == 0
 						);
 					}
 				}
@@ -510,7 +526,7 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					// don't traverse off map
 					if ( self.x[fromNode] == 0 || self.y[fromNode] == Shared.gridHeight-1 ) return null;
 					// decrement x value, increment y value
-					return (self.y[fromNode]+1)*Shared.gridWidth + self.x[fromNode] - 1;
+					return fromNode+Shared.gridWidth-1;
 				},
 				this.diagMoveCost*this.scale,
 				/*
@@ -525,7 +541,8 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 						);
 					} else {
 						return (
-							Map.emptySpace[fromNode+Shared.gridWidth*soize+(soize-1)] == 0
+							Map.emptySpace[fromNode+Shared.gridWidth*soize+(soize-1)] == 0 ||
+							Map.emptySpace[fromNode+Shared.gridWidth-1] == 0
 						);
 					}
 					

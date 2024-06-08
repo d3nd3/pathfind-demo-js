@@ -305,8 +305,8 @@ define ( ['app/overlay','app/shapes','app/gl','app/util','app/units','app/collis
 					this.ring.position.x = pp.x;
 					this.ring.position.y = pp.y;
 					Gl.scene.add(this.ring);
-					this.ring.scale.x = unit.size;
-					this.ring.scale.y = unit.size;
+					this.ring.scale.x = unit.size*0.75;
+					this.ring.scale.y = unit.size*0.75;
 					// this.ring.scale.z = unit.size;
 					who.currentSelection = unit;
 					break;

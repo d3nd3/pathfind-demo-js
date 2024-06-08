@@ -29,15 +29,16 @@ define(['app/shared','app/path','app/map','app/util','app/path','app/gl','app/sh
 
 			Success:
 			If the loop completes without encountering any obstacles, it returns true (path is walkable).
+
+			INPUT == gl co-ordinate space representing source tile.
 		*/
 		this.isWalkable = function ( fromx,fromy,tox,toy,apply) {
 			var dx = Math.abs(tox - fromx);
 			var dy = Math.abs(toy - fromy);
 				
-		
-			var fromInt = [~~(fromx),~~(fromy)];
-			var toInt = [~~(tox),~~(toy)];
 
+
+			//the same, but converts from co-ordinate space to grid space
 			var x = Util.getTileFromReal(fromx);
 			var y = Util.getTileFromReal(fromy);
 
