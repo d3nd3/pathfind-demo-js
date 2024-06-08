@@ -253,26 +253,26 @@ define ( ['app/overlay','app/shapes','app/gl','app/util','app/units','app/collis
 
 			var dir,distance;
 			Util.aVector.set((trapezBL.x/window.innerWidth)*2-1,-(trapezBL.y/window.innerHeight)*2+1,1);
-			Gl.projector.unprojectVector(Util.aVector,Gl.camera);		
+			Util.aVector.unproject(Gl.camera);
 			dir = Util.aVector.sub( Gl.camera.position ).normalize();
 			distance = - Gl.camera.position.z / dir.z;
 			trapezBL = Gl.camera.position.clone().add( dir.multiplyScalar( distance ));
 
 
 			Util.aVector.set((trapezBR.x/window.innerWidth)*2-1,-(trapezBR.y/window.innerHeight)*2+1,1);
-			Gl.projector.unprojectVector(Util.aVector,Gl.camera);		
+			Util.aVector.unproject(Gl.camera);
 			dir = Util.aVector.sub( Gl.camera.position ).normalize();
 			distance = - Gl.camera.position.z / dir.z;
 			trapezBR = Gl.camera.position.clone().add( dir.multiplyScalar( distance ));
 
 			Util.aVector.set((trapezTL.x/window.innerWidth)*2-1,-(trapezTL.y/window.innerHeight)*2+1,1);
-			Gl.projector.unprojectVector(Util.aVector,Gl.camera);		
+			Util.aVector.unproject(Gl.camera);
 			dir = Util.aVector.sub( Gl.camera.position ).normalize();
 			distance = - Gl.camera.position.z / dir.z;
 			trapezTL = Gl.camera.position.clone().add( dir.multiplyScalar( distance ));
 
 			Util.aVector.set((trapezTR.x/window.innerWidth)*2-1,-(trapezTR.y/window.innerHeight)*2+1,1);
-			Gl.projector.unprojectVector(Util.aVector,Gl.camera);		
+			Util.aVector.unproject(Gl.camera);
 			dir = Util.aVector.sub( Gl.camera.position ).normalize();
 			distance = - Gl.camera.position.z / dir.z;
 			trapezTR = Gl.camera.position.clone().add( dir.multiplyScalar( distance ));

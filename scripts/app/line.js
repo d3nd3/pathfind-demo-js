@@ -87,6 +87,8 @@ define(['app/shared','app/path','app/map','app/util','app/path','app/gl','app/sh
 				error -= (fromy - ((y)*Shared.cellSize)) * dx;
 			}
 
+			let isFirstTile = true;
+
 			//console.log('yikes = ' + numberOfSteps);
 			// numberOfSteps = Math.ceil(numberOfSteps/Shared.cellSize) + 1;
 			for (; numberOfSteps > 0; --numberOfSteps)
@@ -108,7 +110,7 @@ define(['app/shared','app/path','app/map','app/util','app/path','app/gl','app/sh
 					// Gl.scene.add(m);
 
 					// console.log('visitted x = ' + x + ' and y = ' + y);
-					if ( Path.occupied[n] == true || Map.emptySpace[n] == 0 ) {
+					if ( !isFirstTile && (Path.occupied[n] == true || Map.emptySpace[n] == 0) ) {
 						//console.log("The straight line path intersects with a collision tile")
 						return false;
 					}
@@ -123,6 +125,7 @@ define(['app/shared','app/path','app/map','app/util','app/path','app/gl','app/sh
 					x += xDir; // move in direction towards destination x
 					error += dy * Shared.cellSize;
 				}
+				isFirstTile = false;
 			}
 			return true;
 		};

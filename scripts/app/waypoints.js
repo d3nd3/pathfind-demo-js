@@ -36,7 +36,7 @@ define(['app/grid','app/path','app/line','app/shared','app/map','app/util','app/
 			this.finalGoal is important variable
 			it allows the server loop to stop trying move the unit.
 		*/
-		this.newWaypoint.prototype.intervalCb = function (unit) {
+		this.newWaypoint.prototype.LineOfSightSmoother = function (unit) {
 			// console.dir(this);
 
 			if (this.sameTileMoveOnly) return [this.clickPosX,this.clickPosY];
@@ -45,41 +45,59 @@ define(['app/grid','app/path','app/line','app/shared','app/map','app/util','app/
 			//we see the goal.
 			// console.log(`clicpos: ${this.clickPosX} ${this.clickPosY} ${unit.mesh.position.x} ${unit.mesh.position.y}`);
 			if ( Collision.lineRect(unit.mesh.position.x,unit.mesh.position.y,this.clickPosX,this.clickPosY,agentSize) == true ) {
-				// console.log("Can see the goal post!");
+				console.log("Can see the goal post!");
 				this.finalGoal = true;
 				Grid.appearDebugCube(Path.x[this.astarOutput],Path.y[this.astarOutput],0xffff00,32);
 				return [this.clickPosX, this.clickPosY];
 			}
 
+			/*
+				Parents lead towards the startPos.
 
+				astarOutput is the final node it output.
+
+				Current Bug:
+					The unit is moving due to moveStraight.
+					When it moves towards edge.
+					It snaps and part of it is out-of-bounds.
+					So line rects from there fail.
+			*/
 			let parentNode = this.astarOutput;
-			// console.log(`huh ; ${this.astarOutput}`);
-			while ( parentNode != this.visionStartNode ) {
+			while ( parentNode != Shared.gridArea ) {
 				Util.getCenterReal(Path.x[parentNode],Path.y[parentNode],agentSize,nodePos2f);
 				//console.log("Finding furthest line of sight");
 				if ( Collision.lineRect(unit.mesh.position.x,unit.mesh.position.y,nodePos2f[0],nodePos2f[1],agentSize) == true ) {
-					//We have vision, so we connect to it and shrink the list.
-					//WAYPOINT 1.
-					this.visionStartNode = parentNode;
-					this.finalGoal = false;
 					
-					//end of line.
-					Path.parent[parentNode] = Shared.gridArea;
+					//this.visionStartNode = parentNode;
+					this.finalGoal = false;
+					//Path.parent[parentNode] = Shared.gridArea;
 
-					Grid.appearDebugCube(Path.x[parentNode],Path.y[parentNode],0xffffff,32);
+					//visualization ( White Cubes )
+					for ( var b = 0; b < Gl.waypointObjs.length;b++) {
+						Gl.scene.remove(Gl.waypointObjs[b]);
+					}
+					Gl.waypointObjs.length = 0;
+					let cube = Grid.appearCube(Path.x[parentNode],Path.y[parentNode],0xffffff,32)
+					Gl.waypointObjs.push(cube);
+					Gl.scene.add(cube);
+
+
 					return [nodePos2f[0], nodePos2f[1]];
 				}
 
 				parentNode = Path.parent[parentNode];
 			}
+			
+			/*
 			if ( this.visionStartNode != Shared.gridArea ) {
 				//no line of sight or no new line of sight.
 				Util.getCenterReal(Path.x[this.visionStartNode],Path.y[this.visionStartNode],agentSize,nodePos2f);
 				return [nodePos2f[0],nodePos2f[1]];
 			} else {
-				//no vision to any node.
-				alert("This should never happen, no vision to any node");
-			}
+			*/	
+			//no vision to any node.
+			alert("This should never happen, no vision to any node");
+			
 		};
 
 		/*
@@ -103,7 +121,9 @@ define(['app/grid','app/path','app/line','app/shared','app/map','app/util','app/
 			let origPosX = unit.mesh.position.x;
 			let origPosY = unit.mesh.position.y;
 
+			// console.log(`input origin : ${origPosX} ${origPosY}`);
 			let agentClearanceTile = Util.getClearanceTileFromXY(origPosX,origPosY,unit.size);
+			// console.log(`output origin : ${(agentClearanceTile % Shared.gridWidth)*Shared.cellSize} ${(agentClearanceTile/Shared.gridWidth)*Shared.cellSize}`);
 			let destClearanceTile = Util.getClearanceTileFromXY(this.clickPosX,this.clickPosY,unit.size);
 			
 			let timeStamp = Date.now() & 0x3FFFFFFF; // hopefully this is more efficient 'number'
@@ -123,6 +143,11 @@ define(['app/grid','app/path','app/line','app/shared','app/map','app/util','app/
 
 				If we centerPos click into cliff tile, == find other square.
 				If we click on empty space, but we do not fit, astar never finds a valid path.
+				
+
+				I feel like we need a solution:
+				to scan for nearest valid location to stand.
+				Using reverse pathfinding to unit location.
 
 			*/
 
@@ -172,7 +197,7 @@ define(['app/grid','app/path','app/line','app/shared','app/map','app/util','app/
 			if ( this.astarOutput != destClearanceTile ) {
 				console.log("HEAVY COMPUTE");
 				Util.getCenterReal(Path.x[this.astarOutput],Path.y[this.astarOutput],unit.size,nodePos2f);
-
+				//console.log(`NewLocation: ${Path.x[this.astarOutput]} ${Path.y[this.astarOutput]} ${nodePos2f[0]} ${nodePos2f[1]}`);
 				this.clickPosX = nodePos2f[0];
 				this.clickPosY = nodePos2f[1];
 			}

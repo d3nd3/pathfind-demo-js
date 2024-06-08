@@ -7,7 +7,7 @@ define(['app/shapes','app/util','app/units','app/shared'],function (Shapes,Util,
 		console.log('creating Chasers');
 		this.newChaser = function () {
 			Units.newUnit.call(this);
-			this.speed = 4;
+			this.speed = 8;
 			this.size = 3;
 			this.radius = 1.5;
 			this.mesh = Shapes.cube(this.size * Shared.cellSize);
@@ -17,6 +17,8 @@ define(['app/shapes','app/util','app/units','app/shared'],function (Shapes,Util,
 			Util.getCenterReal(this.revivePos.x,this.revivePos.y,this.size,Util.fconvArr);
 			this.setPos(Util.fconvArr[0],Util.fconvArr[1]);
 			this.mesh.position.z = this.size*0.5;
+
+			this.mesh.visible = false;
 		};
 
 		Util.extend(Units.newUnit,this.newChaser);

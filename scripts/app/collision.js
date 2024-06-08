@@ -1,142 +1,195 @@
-define( ['app/line','app/shared','app/util','app/map','app/path'],function (Line,Shared,Util,Map,Path) {
+define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/shapes'],function (Line,Shared,Util,Map,Path,Gl,Shapes) {
 	function Collision () {
 		console.log('creating Collision');
+
 		//currently requires center of 'rect'
 		/*
-			Initialization and Setup:
-				It takes the coordinates of the centers of the two rectangles (rect1x, rect1y, rect2x, rect2y) and a 
-				size parameter (possibly representing the side length of the rectangles).
-				It initializes arrays c1 and c2 to store the coordinates of the perimeter points for the two rectangles.
-				It calculates values used for determining the positions of the perimeter points, such as s (half the size) 
-				and c (likely the cell size of the grid).
-			
-			Perimeter Point Calculation:
-				It enters a loop to calculate the perimeter points for both rectangles in a clockwise manner.
-				It divides the loop into four sections, each representing a side of the rectangle (top, right, bottom, left).
-				In each section, it iterates over the segments of that side, incrementing the x or y coordinates as 
-				needed and storing the coordinates in c1 and c2.
-				
-			Walkability Check:
-				It iterates through the pairs of corresponding perimeter points in c1 and c2.
-				For each pair, it calls the Line.isWalkable function (which is presumably defined elsewhere) to check 
-				if the line between those points is walkable.
-				If any line segment is not walkable, it sets the walkable flag to false and breaks out of the loop.
+			This javascript function is using Bresenham's line algorithm
+			 to move 2d square agent's on a 2d tile based game, it highlights
+			  if any tiles along the line are collision tiles.  Even though the 
+			  agent can have unaligned positions, its collision position is always tile aligned.
+				An agent is eg. a 3x3 set of tiles, currently it uses the center of each agent 
+				tile to run the line algorithm on. It currently gets the perimeter of the agent's
+				 collision tile position, and runs a line intersection for each tile in each edge.
+				   I want you to alter it so that it runs the line intersection from every 'vertex'
+					of the agent collision tiles instead of from the center of each.  I also want 
+					an optimization which only uses the edge used in the direction of the move.
+					 So if it was a diagonal-right move, it only performs line intersection 
+					 from bottom-edge outer vertices, and right-edge outer vertices.
 
-			Return Value:
-				It returns the walkable flag, which indicates whether a walkable path exists between the two rectangles.
+
+			There is another way for larger agents:
+			  Take the first line output, and row-by-row or column-by-column
+			  iterate the nodes until reach output from the second line.
+			  3x3 agent requires 7 line intersection calls.
+			  4x4 agents requires 9 line interections calls.
+			  So the larger the agent, the more cost-savings.
 		*/
-		this.lineRect = function (rect1x,rect1y,rect2x,rect2y,size,apply) {
-			let radi = size*0.5;
+
+		const EDGE_UP = 0;
+		const EDGE_RIGHT = 1;
+		const EDGE_DOWN = 2;
+		const EDGE_LEFT = 3;
+
+
+		const PADDING = 0.2;
+
+		/*
+			The points here are in 1d index format
+			returns array of points.
+		*/
+		let acquireVertices = function(startPoint,direction,size) {
+			// console.log(`size is ${size}`);
+			let points = [];
+			switch (direction) {
+				case EDGE_UP:
+					for (let i=1;i<size;i++) {
+						
+						points.push(startPoint + Shared.gridWidth*i);
+					}
+					
+				break;
+				case EDGE_DOWN:
+					for (let i=1;i<size;i++) {
+						points.push(startPoint - Shared.gridWidth*i);
+					}
+					
+				break;
+				case EDGE_LEFT:
+					for (let i=1;i<size;i++) {
+						points.push(startPoint - i);
+					}
+					
+				break;
+				case EDGE_RIGHT:
+					for (let i=1;i<size;i++) {
+						points.push(startPoint + i);
+					}
+					
+				break;
+			}
+
+			return points;
+		};
+
+		let getPointsForPosition = function(dx,dy,cTile,size) {
+			let points = [];
+			if (dx > 0) {
+				if (dy > 0) {
+					//top-right
+					startPoint = cTile + size * Shared.gridWidth + size;
+					let startVert = startPoint;
+					startVert = {point: startVert, paddingX:-1,paddingY:-1};
+
+					let topVerts = acquireVertices(startPoint,EDGE_LEFT,size);
+					topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
+
+					let rightVerts = acquireVertices(startPoint,EDGE_DOWN,size);
+					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
+
+					points.push(...topVerts,startVert,...rightVerts);
+				} else {
+					//bottom-right
+					startPoint = cTile + size;
+					let startVert = startPoint;
+					startVert = {point: startVert, paddingX:-1, paddingY: 1};
+
+					let rightVerts = acquireVertices(startPoint,EDGE_UP,size);
+					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
+
+					let botVerts = acquireVertices(startPoint,EDGE_LEFT,size);
+					botVerts = botVerts.map(point => ({ point, paddingX: 0,paddingY:1 }));
+
+					points.push(...botVerts,startVert,...rightVerts);
+				}
+				
+			} else {
+				if (dy > 0) {
+					//top-left
+					startPoint = cTile + size * Shared.gridWidth;
+					let startVert = startPoint;
+					startVert = {point: startVert, paddingX:1,paddingY:-1};
+
+					let leftVerts = acquireVertices(startPoint,EDGE_DOWN,size);
+					leftVerts = leftVerts.map(point => ({ point, paddingX: 1,paddingY:0 }));
+
+					let topVerts = acquireVertices(startPoint,EDGE_RIGHT,size);
+					topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
+					
+					points.push(...topVerts,startVert,...leftVerts);
+				} else {
+					//bottom-left
+					startPoint = cTile;
+					let startVert = startPoint;
+					startVert = {point: startVert, paddingX: 1,paddingY: 1};
+
+					let leftVerts = acquireVertices(startPoint,EDGE_UP,PADDING,size);
+					leftVerts = leftVerts.map(point => ({ point, paddingX:1,paddingY:0 }));
+
+					let botVerts = acquireVertices(startPoint,EDGE_RIGHT,size);
+					botVerts = botVerts.map(point => ({ point, paddingX:0,paddingY:1 }));
+
+					points.push(...botVerts,startVert,...leftVerts);
+				}
+				
+			}
+			return points;
+		};
+
+
+		this.lineRect = function (startX,startY,destX,destY,size,apply) {
+			let cellS = Shared.cellSize;
+
 			/*
-				Conundurum:
-				  Do we support only center of tiles, tile aligned?
-				  I think it can still function if use non-aligned abs positions for source.
+				Efficiency improvement can be made by using only perimeter edges that
+				move into the direction, like an arrow. 2 edges, instead of 4.
+				1 edge if directly straight.
 			*/
-			var c1 = [], c2 = [];
-			
-			// var padding = 0.4;
-			
-			var c = Shared.cellSize;
-
-			var i;
-
-			//get TOPLEFT of each 'agent'
-			
-
-			//1,4,8,12
-			
-			//Takes the perimeter of the agent collision box
-			//Runs a lineWalk for each.
-
-			//size*2 ensures size 1 has only 1 position
-			//size 2 has 2 positions
-			//size 3 has 3 positions etc.
-			//clockwise
-			var walkable = true;
 			if (size == 1) {
-				if ( !Line.isWalkable(rect1x,rect1y,rect2x,rect2y,apply) ) {
-					walkable = false;
+
+				if ( !Line.isWalkable(startX,startY,destX,destY,apply) ) {
+					return false;
 				}
 			} else {
-				let rect1KK = rect1x - radi * c;
-				let rect2KK = rect2x - radi * c;
-				let rect1LL = rect1y + radi * c;
-				let rect2LL = rect2y + radi * c;
-
-				for ( i = 0 ; i < size*2; i+=2 ) {
-					//top
-					//large static y
-					//dynamic increasing x
-
-					//1 cell up X
-					rect1KK = rect1KK + c;
-					rect2KK = rect2KK + c;
-
-					//c1:x,y
-					c1[i] = rect1KK;
-					c1[i+1] = rect1LL;
-
-					//c2:x,y
-					c2[i] = rect2KK;
-					c2[i+1] = rect2LL;
-				} 
-
-				for ( i = size*2; i < 2  * size*2; i+=2 ) {
-					//right
-					//large static x
-					//dynamic decreasing y
-					rect1LL = rect1LL - c;
-					rect2LL = rect2LL - c;
-					
-					c1[i] = rect1KK;
-					c1[i+1] = rect1LL;
-
-					c2[i] = rect2KK;
-					c2[i+1] = rect2LL;
-
+				for ( var b = 0; b < Gl.tubeObjs.length;b++) {
+					Gl.scene.remove(Gl.tubeObjs[b]);
 				}
-				for ( i = 2  * size*2 ; i < 3 * size*2; i+=2 ) {
-					//bottom
-					//small static y
-					//dynamic decreasing x
-					
-					rect1KK = rect1KK - c;
-					rect2KK = rect2KK - c;
-					
-					c1[i] = rect1KK;
-					c1[i+1] = rect1LL;
+				Gl.tubeObjs.length = 0;
 
-					c2[i] = rect2KK;
-					c2[i+1] = rect2LL;
+				let sClearanceTile = Util.getClearanceTileFromXY(startX,startY,size);
+				let dClearanceTile = Util.getClearanceTileFromXY(destX,destY,size);
 
+				let dx = destX - startX;
+				let dy = destY - startY;
+
+				let startPoints = getPointsForPosition(dx,dy,sClearanceTile,size);
+				let destPoints = getPointsForPosition(dx,dy,dClearanceTile,size);
+
+				console.log(`startPoints: ${startPoints.length}`);
+				for (let i = 0; i < startPoints.length; i++) {
+					let point1 = startPoints[i];
+					let point2 = destPoints[i];
+
+
+					console.log(`Where NaN : ${Path.x[point1.point]} ${Path.y[point1.point]} ${Path.x[point2.point]} ${Path.y[point2.point]}`);
+					let point1X = (Path.x[point1.point] + point1.paddingX*PADDING) * Shared.cellSize;
+					let point1Y = (Path.y[point1.point] + point1.paddingY*PADDING) * Shared.cellSize;
+					let point2X = (Path.x[point2.point] + point2.paddingX*PADDING) * Shared.cellSize;
+					let point2Y = (Path.y[point2.point] + point2.paddingY*PADDING) * Shared.cellSize;
+
+					console.log(`No Nan : ${point1.paddingX}, ${point1.paddingY} ${point2.paddingX} ${point2.paddingY}`);
+					console.log(`Here NaN : ${point1X} ${point1Y} ${point2X} ${point2Y}`);
+					let tube = Shapes.tube(point1X,point1Y,point2X,point2Y,1);
+					Gl.tubeObjs.push(tube);
+					Gl.scene.add(tube);
+
+					if (!Line.isWalkable(point1X,point1Y,point2X,point2Y))
+						return false;
 				}
 
-				for ( i = 3 * size*2 ; i < 4 * size*2; i+=2 ) {
-					//left
-					//small static x
-					//dynamic increasing y
-
-					rect1LL = rect1LL + c;
-					rect2LL = rect2LL + c;
-
-					c1[i] = rect1KK;
-					c1[i+1] = rect1LL;
-
-					c2[i] = rect2KK;
-					c2[i+1] = rect2LL;
-
-				}
-
-				for ( var h = 0; h < (size*4)*2; h+=2 ) {
-					
-					if ( !Line.isWalkable(c1[h],c1[h+1],c2[h],c2[h+1]) ) {
-						walkable = false;
-						break;
-					}
-				}
 			}
+			return true;
 			
-			return walkable;
 		};
 
 
@@ -146,14 +199,14 @@ define( ['app/line','app/shared','app/util','app/map','app/path'],function (Line
 			var max = bbox.max;
 
 			if (px < min.x || px > max.x || py < min.y || py > max.y) {
-			    return false;
+				return false;
 			}
 			var n = vertArray.length;
 			var i,j,c = 0;
 			for (i = 0, j = n-1; i < n; j = i++) {
 			  if ( ((vertArray[i].y>py) != (vertArray[j].y>py)) &&
 			   (px < (vertArray[j].x-vertArray[i].x) * (py-vertArray[i].y) / (vertArray[j].y-vertArray[i].y) + vertArray[i].x) )
-			     c = !c;
+				 c = !c;
 			}
 			return c;
 		};

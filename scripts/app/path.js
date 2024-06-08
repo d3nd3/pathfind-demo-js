@@ -278,11 +278,11 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 				for (const node of unvisitedNodes) {
 					Grid.appearDebugCube(node[0],node[1],0xff0000);
 				}
-				*/
+				
 				unvisitedNodes = [];
 
 				//visualization / paint
-				/*
+				
 				await new Promise((resolve,reject)=> {
 					setTimeout(()=>{
 						resolve();
@@ -435,11 +435,19 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					return (self.y[fromNode]-1)*Shared.gridWidth + self.x[fromNode] - 1;
 				},
 				this.diagMoveCost*this.scale,
+				/*
+					for size 1 , we check down and left
+					for larger sizes, we check down and left.
+				*/
 				function ( soize,fromNode ) {
-					return (	Map.emptySpace[fromNode+(((-1 - soize) *Shared.gridWidth) + (soize-1) )] == 0 || //southern 2
-								Map.emptySpace[fromNode+(((-1 - soize) *Shared.gridWidth) )] == 0 ||
-								Map.emptySpace[fromNode -1] == 0 || //western 2
-								Map.emptySpace[fromNode-((soize-1) *Shared.gridWidth)  -1] == 0);
+					if ( soize == 1) {
+						return (	Map.emptySpace[fromNode-Shared.gridWidth] == 0 || 
+									Map.emptySpace[fromNode-1] == 0 
+						);
+					} else {
+						return ( Map.emptySpace[fromNode-Shared.gridWidth+(soize-1)] == 0);
+					}
+					
 				}
 
 			],
@@ -452,11 +460,22 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					return (self.y[fromNode]+1)*Shared.gridWidth + self.x[fromNode] + 1;
 				},
 				this.diagMoveCost*this.scale,
+				/*
+					for size 1 , we check up and right
+					for larger sizes, we check nothing.
+
+					4 special squares need to check. related to the 2 corners on my side axis.
+				*/
 				function ( soize,fromNode ) {
-					return (	Map.emptySpace[fromNode+Shared.gridWidth] == 0 || //northern 2
-								Map.emptySpace[fromNode+Shared.gridWidth + (soize-1)] == 0 ||
-								Map.emptySpace[fromNode + soize] == 0 || //eastern 2
-								Map.emptySpace[fromNode-((soize-1) *Shared.gridWidth)  +soize] == 0);
+					if (soize == 1) {
+						return (	Map.emptySpace[fromNode+Shared.gridWidth] == 0 ||
+									Map.emptySpace[fromNode+1] == 0
+						);
+					} else {
+						return (
+								Map.emptySpace[fromNode+Shared.gridWidth*soize] == 0
+						);
+					}
 				}
 
 			],
@@ -469,11 +488,20 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					return (self.y[fromNode]-1)*Shared.gridWidth + self.x[fromNode] + 1;
 				},
 				this.diagMoveCost*this.scale,
+				/*
+					for size 1 , we check down and right
+					for larger sizes, we check only down.
+				*/
 				function ( soize,fromNode ) {
-					return (	Map.emptySpace[fromNode+(((-1 - soize) *Shared.gridWidth) + (soize-1) )] == 0 || //southern 2
-								Map.emptySpace[fromNode+(((-1 - soize) *Shared.gridWidth) )] == 0 ||
-								Map.emptySpace[fromNode + soize] == 0 || //eastern 2
-								Map.emptySpace[fromNode-((soize-1) *Shared.gridWidth)  +soize] == 0);
+					if ( soize==1 ) {
+						return (	Map.emptySpace[fromNode-Shared.gridWidth] == 0 ||
+									Map.emptySpace[fromNode+1] == 0
+								);
+					} else {
+						return (
+							Map.emptySpace[fromNode-Shared.gridWidth] == 0
+						);
+					}
 				}
 			],
 			[
@@ -485,11 +513,22 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					return (self.y[fromNode]+1)*Shared.gridWidth + self.x[fromNode] - 1;
 				},
 				this.diagMoveCost*this.scale,
+				/*
+					for size 1 , we check up and left
+					for larger sizes, we check only left.
+				*/
 				function ( soize,fromNode ) {
-					return (	Map.emptySpace[fromNode+Shared.gridWidth] == 0 || //northern 2
-								Map.emptySpace[fromNode+Shared.gridWidth + (soize-1)] == 0 ||
-								Map.emptySpace[fromNode -1] == 0 || //western 2
-								Map.emptySpace[fromNode-((soize-1) *Shared.gridWidth)  -1] == 0);
+					soize = 1;
+					if (soize==1) {
+						return (	Map.emptySpace[fromNode+Shared.gridWidth] == 0 ||
+									Map.emptySpace[fromNode-1] == 0
+						);
+					} else {
+						return (
+							Map.emptySpace[fromNode+Shared.gridWidth*soize+(soize-1)] == 0
+						);
+					}
+					
 				}
 			]
 		];

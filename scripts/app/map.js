@@ -23,6 +23,7 @@ define(['app/mapdata','app/shared'],function (Mapdata,Shared) {
 			}
 		}
 
+		//intentinonal blocker
 		this.emptySpace[33172] = 0;
 		this.emptySpace[33173] = 0;
 		this.emptySpace[32852] = 0;

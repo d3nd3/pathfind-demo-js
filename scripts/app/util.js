@@ -46,11 +46,14 @@ define(['app/shared'],function (Shared) {
 			the clearance data was set using (positive x,negative y) (towards BOTTOM RIGHT)
 
 			caution, when size is even, this returns a tile boundary.
+
+			Essentially
+			ClearanceTile grid pos To Center coordinates.
 		*/
 		
 		this.getCenterReal = function(x_pos,y_pos,size,outArr) {
 			let centerTile = 0;
-			if ( size % 2 == 0 ) centerTile = 0.5;
+			//if ( size % 2 == 0 ) centerTile = 0.5;
 			//center of agent
 			outArr[0] = (x_pos + size * 0.5 + centerTile) * Shared.cellSize; 
 			outArr[1] = (y_pos + size * 0.5 + centerTile) * Shared.cellSize;
@@ -62,6 +65,8 @@ define(['app/shared'],function (Shared) {
 
 			returns the Tile 1d
 			that can be used into the Path.clearance array.
+
+			CenterTile In Coordinates To ClearanceTile
 		*/
 		this.getClearanceTileFromXY = function(realPosX,realPosY,agentSize) {
 
@@ -114,7 +119,7 @@ define(['app/shared'],function (Shared) {
 			let clearanceTileX = tileX - clearanceOffsetX;
 			let clearanceTileY = tileY - clearanceOffsetY;
 
-			return Shared.gridWidth * clearanceTileX + clearanceTileY;
+			return Shared.gridWidth * clearanceTileY + clearanceTileX;
 
 		};
 

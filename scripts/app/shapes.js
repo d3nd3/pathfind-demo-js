@@ -44,6 +44,22 @@ define(function () {
 			
 			return rect;
 		};
+
+		this.tube = function(startX,startY,endX,endY,thickness) {
+			// Define the start and end positions of the line
+			const startPos = new THREE.Vector3(startX, startY, 0);
+			const endPos = new THREE.Vector3(endX, endY, 0);
+
+			// Create a CatmullRomCurve3 with just the start and end points
+			const curve = new THREE.CatmullRomCurve3([startPos, endPos]);
+
+			// Create the tube geometry with a thickness of 1
+			const tubeGeometry = new THREE.TubeGeometry(curve, 20, thickness, 8, false); 
+
+			const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+			const mesh = new THREE.Mesh(tubeGeometry, material);
+			return mesh;
+		}
 	}
 
 	

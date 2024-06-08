@@ -44,12 +44,14 @@ define(['app/shared','app/util'],function (Shared,Util) {
 		// this.camera.position.set(0,0,0);
 		this.camera.rotation.x = 34 * Math.PI / 180;
 
-		this.projector = new THREE.Projector();
+		// this.projector = new THREE.Projector();
 
 		this.clickVector = new THREE.Vector3(0.0,0.0,0.0);
 		this.clickRay = new THREE.Raycaster();
 
 		this.debugObjs = [];
+		this.tubeObjs = [];
+		this.waypointObjs = [];
 
 		//project = 3d to 2d
 		//unproject = 2d to 3d
@@ -62,7 +64,7 @@ define(['app/shared','app/util'],function (Shared,Util) {
 			//method2
 			//it wants -1 to 1 for x and 1 to -1 for y
 			Util.aVector.set(0,0,0.5);
-			this.projector.unprojectVector(Util.aVector,this.camera);
+			Util.aVector.unproject(this.camera);
 
 			var dir = Util.aVector.sub( this.camera.position ).normalize();
 			var distance = - this.camera.position.z / dir.z;

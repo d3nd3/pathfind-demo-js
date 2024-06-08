@@ -1,4 +1,4 @@
-define(['jquerymousewheel','app/gl','app/shared','app/selector','app/util','app/line'], function (jmouse,Gl,Shared,Selector,Util,Line) {
+define(['jquerymousewheel','app/gl','app/shared','app/selector','app/util','app/line','app/path'], function (jmouse,Gl,Shared,Selector,Util,Line,Path) {
 	function Keys () {
 		console.log('creating Keys');
 		var self = this;
@@ -136,7 +136,7 @@ define(['jquerymousewheel','app/gl','app/shared','app/selector','app/util','app/
 					 //    {
 					 //    	console.log('NOOOO!!!');
 					 //    }
-					    
+						
 
 
 					break;
@@ -223,14 +223,14 @@ define(['jquerymousewheel','app/gl','app/shared','app/selector','app/util','app/
 							
 							if ( who.currentSelection != undefined ) {
 								Util.getExactCoordinates(Gl.renderer.domElement,event);
-							    Gl.clickVector.set(( Util.fconvArr[0] / window.innerWidth ) *2-1, -(Util.fconvArr[1]/window.innerHeight)*2+1, 0.5);
-								Gl.projector.unprojectVector( Gl.clickVector, Gl.camera );
-
+								Gl.clickVector.set(( Util.fconvArr[0] / window.innerWidth ) *2-1, -(Util.fconvArr[1]/window.innerHeight)*2+1, 0.5);
+								Gl.clickVector.unproject(Gl.camera);
 								Gl.clickRay.set(Gl.camera.position, Gl.clickVector.sub( Gl.camera.position ).normalize());
 								var intersects = Gl.clickRay.intersectObject( Shared.flatground );
 
 								if ( intersects.length > 0 ) {
 									var cs = who.currentSelection;
+									// console.log(`Clearance here: ${Path.clearance[Util.getTileFromReal(intersects[0].point.y)*Shared.gridWidth+Util.getTileFromReal(intersects[0].point.x)]}`);
 									await cs.wpsystem.generate(intersects[0].point.x,intersects[0].point.y,cs);
 
 								}
@@ -241,22 +241,22 @@ define(['jquerymousewheel','app/gl','app/shared','app/selector','app/util','app/
 			});
 
 			$(document).on('mousewheel', function(event) {
-	    		//console.log(event.deltaX, event.deltaY, event.deltaFactor);
+				//console.log(event.deltaX, event.deltaY, event.deltaFactor);
 				var distance = (Shared.cellSize/(1.5*Shared.cellSize)) * event.deltaFactor * (event.deltaY*-1);
 				//console.log('distance is ' + distance);
-	    		if ( event.deltaY > 0 )
-	    		{
-	    			//mousewheelup
-	    			//zoomin here
+				if ( event.deltaY > 0 )
+				{
+					//mousewheelup
+					//zoomin here
 
-	    			Gl.camera.position.z += distance;
-	    		} else if ( event.deltaY < 0 )
-	    		{
-	    			//mousewheeldown
-	    			//zoomout here
-	    			Gl.camera.position.z += distance;
-	    		}
-	    		//console.log('new cam position z is : ' + Gl.camera.position.z);
+					Gl.camera.position.z += distance;
+				} else if ( event.deltaY < 0 )
+				{
+					//mousewheeldown
+					//zoomout here
+					Gl.camera.position.z += distance;
+				}
+				//console.log('new cam position z is : ' + Gl.camera.position.z);
 			});
 
 			$(document).mouseleave( function ( event )  {
@@ -271,58 +271,58 @@ define(['jquerymousewheel','app/gl','app/shared','app/selector','app/util','app/
 				// alert('moving mouse');
 				Util.getExactCoordinates(Gl.renderer.domElement,event);
 
-			    //selector initation
-			    if ( self.keys.select == true  && self.keys.selectDraw == false) {
-			    	//save new endpos of selection rectangle
-			    	self.keys.selectDraw = true;
-			    	Selector.init(Util.fconvArr[0],Util.fconvArr[1],self.leftClickPos[0],self.leftClickPos[1]);
-			    	Selector.show();
-			    }
+				//selector initation
+				if ( self.keys.select == true  && self.keys.selectDraw == false) {
+					//save new endpos of selection rectangle
+					self.keys.selectDraw = true;
+					Selector.init(Util.fconvArr[0],Util.fconvArr[1],self.leftClickPos[0],self.leftClickPos[1]);
+					Selector.show();
+				}
 
-			    if ( self.keys.selectDraw == true ) {
-			    	// console.log('resize!');
-			   		Selector.resize(Util.fconvArr[0],Util.fconvArr[1]);
-			    }
+				if ( self.keys.selectDraw == true ) {
+					// console.log('resize!');
+					Selector.resize(Util.fconvArr[0],Util.fconvArr[1]);
+				}
 
 
-			    var hold = window.innerWidth * window.innerHeight * 0.00001;
-			    
-			    //left
-			    var thresh = hold;
-			    if ( Util.fconvArr[0] < thresh ) {
-			    	// console.log('left is true');
-				    self.keys.panLeft = true;  
-			    } else {
-			    	 self.keys.panLeft = false;
-			    }
+				var hold = window.innerWidth * window.innerHeight * 0.00001;
+				
+				//left
+				var thresh = hold;
+				if ( Util.fconvArr[0] < thresh ) {
+					// console.log('left is true');
+					self.keys.panLeft = true;  
+				} else {
+					 self.keys.panLeft = false;
+				}
 
-			    //right
-			    thresh = window.innerWidth - hold;
-			    if ( Util.fconvArr[0] > thresh) {
-			    	// console.log('right is true');
-			    	self.keys.panRight = true;
-			    } else {
-			    	self.keys.panRight = false;
-			    }
-			     
+				//right
+				thresh = window.innerWidth - hold;
+				if ( Util.fconvArr[0] > thresh) {
+					// console.log('right is true');
+					self.keys.panRight = true;
+				} else {
+					self.keys.panRight = false;
+				}
+				 
 				//up
-			    thresh = hold;
-			    if ( Util.fconvArr[1] < thresh ) {
-			    	// console.log('up is true');
-		    		self.keys.panUp = true;
-			    } else {
-			    	self.keys.panUp = false;
-			    }
-			     
-			    //down
-			    thresh = window.innerHeight - hold;
-			    if ( Util.fconvArr[1] > thresh ) {
-			    	// console.log('down is true');
-		    		self.keys.panDown = true;
-			    } else { 
-			    	self.keys.panDown = false;
-			    }
-			     
+				thresh = hold;
+				if ( Util.fconvArr[1] < thresh ) {
+					// console.log('up is true');
+					self.keys.panUp = true;
+				} else {
+					self.keys.panUp = false;
+				}
+				 
+				//down
+				thresh = window.innerHeight - hold;
+				if ( Util.fconvArr[1] > thresh ) {
+					// console.log('down is true');
+					self.keys.panDown = true;
+				} else { 
+					self.keys.panDown = false;
+				}
+				 
 
 			});
 		}; //this.assign function

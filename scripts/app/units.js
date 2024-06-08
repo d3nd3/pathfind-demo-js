@@ -30,14 +30,23 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 		this.newUnit.prototype.moveStraight = function ( allowedDistance) {
 
 			//Find the next line of sight node.
-			let [destx,desty] = this.wpsystem.intervalCb(this);
+			let [destx,desty] = this.wpsystem.LineOfSightSmoother(this);
 
+			//This is outputting the same point even after reaching it.
+			//Might wanna fix that eventually.
+			//So that it doesn't recurse indefinitely on same point.
+			//Even though it reached it.
+
+
+			console.log(`Destx: ${destx} Desty: ${desty}`);
 			var dx = destx - this.mesh.position.x;
 			var dy = desty - this.mesh.position.y;
-			
 
 			var distThere = Math.sqrt(dx*dx+dy*dy);
 
+			
+
+			// var directionVector = new THREE.Vector3(movementX, movementY, 0).normalize();
 
 			/*
 				TODO:
@@ -51,11 +60,16 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 			*/
 			if ( distThere > allowedDistance ) {
 
-				var ratio = allowedDistance / distThere;
+				//get unit vector. 
+				let unitVectorX = dx/distThere;
+				let unitVectorY = dy/distThere;
+				//TODO: Use deltaTime here?
+				//Apply the "speed"
+				let movementX = unitVectorX * allowedDistance;
+				let movementY = unitVectorY * allowedDistance;
 
-				var aNewPosX = this.mesh.position.x + dx * ratio;
-				var aNewPosY = this.mesh.position.y + dy * ratio;
-
+				var aNewPosX = this.mesh.position.x + movementX;
+				var aNewPosY = this.mesh.position.y + movementY;
 
 				this.setPos(aNewPosX,aNewPosY);
 
@@ -64,8 +78,8 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 				you _WILL_ reach the goal, and might have excess fuel/speed for new goal.
 			*/
 			else {
+				console.log(`SpeedStepDistance = ${allowedDistance} DistMoved = ${distThere}`);
 
-				
 				this.setPos(destx,desty);
 			
 				if (this.wpsystem.finalGoal) {
@@ -117,7 +131,7 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 			if (!bCenterHori) {
 				//upper horizontal edge
 				for (let i=0;i<this.size;i++) {
-					if (Path.clearance[clearanceTile+(this.size-1)*Shared.gridWidth+i] < this.size) {
+					if (Path.clearance[clearanceTile+this.size*Shared.gridWidth+i] < this.size) {
 						bCenterHori = true;
 						break;
 					}
@@ -125,7 +139,7 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 			}
 			//left vertical edge
 			for (let i=0;i<this.size;i++) {
-				if (Path.clearance[clearanceTile+Shared.gridWidth*i] < this.size) {
+				if (Path.clearance[clearanceTile+Shared.gridWidth*i-1] < this.size) {
 					bCenterVert = true;
 					break;
 				}
@@ -134,7 +148,7 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 			if (!bCenterVert) {
 				//right vertical edge
 				for (let i=0;i<this.size;i++) {
-					if (Path.clearance[clearanceTile+Shared.gridWidth*i+(this.size-1)] < this.size) {
+					if (Path.clearance[clearanceTile+Shared.gridWidth*i+this.size] < this.size) {
 						bCenterVert = true;
 						break;
 					}
