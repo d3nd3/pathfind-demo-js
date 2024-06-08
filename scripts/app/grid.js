@@ -31,8 +31,8 @@
 				color.setHex(0x000000);
 			} else
 			{
-				// color.setHex(Math.random() * 0xffffff);
-				color.setHex(0xffffff);
+				color.setHex(Math.random() * 0xffffff);
+				// color.setHex(0xffffff);
 			}
 
 			

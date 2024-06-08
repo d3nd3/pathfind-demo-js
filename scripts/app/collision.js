@@ -31,8 +31,11 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 		const EDGE_DOWN = 2;
 		const EDGE_LEFT = 3;
 
-
-		const PADDING = 0.5;
+		//0.05 works
+		//0.01 works
+		//0.005 works
+		//0 breaks
+		const PADDING = 0.005;
 
 		/*
 			The points here are in 1d index format
@@ -43,31 +46,31 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 			let points = [];
 			switch (direction) {
 				case EDGE_UP:
-					// for (let i=1;i<size+1;i++) {
-					for (let i=1;i<size;i++) {
+					for (let i=1;i<size+1;i++) {
+					// for (let i=1;i<size;i++) {
 						
 						points.push(startPoint + Shared.gridWidth*i);
 					}
 					
 				break;
 				case EDGE_DOWN:
-					// for (let i=1;i<size+1;i++) {
-					for (let i=1;i<size;i++) {
+					for (let i=1;i<size+1;i++) {
+					// for (let i=1;i<size;i++) {
 						points.push(startPoint - Shared.gridWidth*i);
 					}
 					
 				break;
 				case EDGE_LEFT:
 
-					// for (let i=1;i<size+1;i++) {
-					for (let i=1;i<size;i++) {
+					for (let i=1;i<size+1;i++) {
+					// for (let i=1;i<size;i++) {
 						points.push(startPoint - i);
 					}
 					
 				break;
 				case EDGE_RIGHT:
-					// for (let i=1;i<size+1;i++) {
-					for (let i=1;i<size;i++) {
+					for (let i=1;i<size+1;i++) {
+					// for (let i=1;i<size;i++) {
 						points.push(startPoint + i);
 					}
 					
@@ -91,14 +94,14 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					startVert = {point: startVert, paddingX:-1,paddingY:-1};
 
 					let topVerts = acquireVertices(startPoint,EDGE_LEFT,size);
-					topVerts = topVerts.map(point => ({ point, paddingX: -1,paddingY:-1 }));
-					// topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
-					// topVerts[topVerts.length-1].paddingX = 1;
+					// topVerts = topVerts.map(point => ({ point, paddingX: -1,paddingY:-1 }));
+					topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
+					topVerts[topVerts.length-1].paddingX = 1;
 
 					let rightVerts = acquireVertices(startPoint,EDGE_DOWN,size);
-					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:-1 }));
-					// rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
-					// rightVerts[rightVerts.length-1].paddingY = 1;
+					// rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:-1 }));
+					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
+					rightVerts[rightVerts.length-1].paddingY = 1;
 
 					points.push(...topVerts,startVert,...rightVerts);
 				} else {
@@ -108,14 +111,14 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					startVert = {point: startVert, paddingX:-1, paddingY: 1};
 
 					let rightVerts = acquireVertices(startPoint,EDGE_UP,size);
-					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:1 }));
-					// rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
-					// rightVerts[rightVerts.length-1].paddingY = -1;
+					// rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:1 }));
+					rightVerts = rightVerts.map(point => ({ point, paddingX: -1,paddingY:0 }));
+					rightVerts[rightVerts.length-1].paddingY = -1;
 
 					let botVerts = acquireVertices(startPoint,EDGE_LEFT,size);
-					botVerts = botVerts.map(point => ({ point, paddingX: -1,paddingY:1 }));
-					// botVerts = botVerts.map(point => ({ point, paddingX: 0,paddingY:1 }));
-					// botVerts[botVerts.length-1].paddingX = 1;
+					// botVerts = botVerts.map(point => ({ point, paddingX: -1,paddingY:1 }));
+					botVerts = botVerts.map(point => ({ point, paddingX: 0,paddingY:1 }));
+					botVerts[botVerts.length-1].paddingX = 1;
 
 					points.push(...botVerts,startVert,...rightVerts);
 				}
@@ -129,14 +132,14 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					startVert = {point: startVert, paddingX:1,paddingY:-1};
 
 					let leftVerts = acquireVertices(startPoint,EDGE_DOWN,size);
-					leftVerts = leftVerts.map(point => ({ point, paddingX: 1,paddingY:-1 }));
-					// leftVerts = leftVerts.map(point => ({ point, paddingX: 1,paddingY:0 }));
-					// leftVerts[leftVerts.length-1].paddingY = 1;
+					// leftVerts = leftVerts.map(point => ({ point, paddingX: 1,paddingY:-1 }));
+					leftVerts = leftVerts.map(point => ({ point, paddingX: 1,paddingY:0 }));
+					leftVerts[leftVerts.length-1].paddingY = 1;
 
 					let topVerts = acquireVertices(startPoint,EDGE_RIGHT,size);
-					topVerts = topVerts.map(point => ({ point, paddingX: 1,paddingY:-1 }));
-					// topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
-					// topVerts[topVerts.length-1].paddingX = -1;
+					// topVerts = topVerts.map(point => ({ point, paddingX: 1,paddingY:-1 }));
+					topVerts = topVerts.map(point => ({ point, paddingX: 0,paddingY:-1 }));
+					topVerts[topVerts.length-1].paddingX = -1;
 
 					points.push(...topVerts,startVert,...leftVerts);
 				} else {
@@ -146,14 +149,14 @@ define( ['app/line','app/shared','app/util','app/map','app/path','app/gl','app/s
 					startVert = {point: startVert, paddingX: 1,paddingY: 1};
 
 					let leftVerts = acquireVertices(startPoint,EDGE_UP,size);
-					leftVerts = leftVerts.map(point => ({ point, paddingX:1,paddingY:1 }));
-					// leftVerts = leftVerts.map(point => ({ point, paddingX:1,paddingY:0 }));
-					// leftVerts[leftVerts.length-1].paddingY = -1;
+					// leftVerts = leftVerts.map(point => ({ point, paddingX:1,paddingY:1 }));
+					leftVerts = leftVerts.map(point => ({ point, paddingX:1,paddingY:0 }));
+					leftVerts[leftVerts.length-1].paddingY = -1;
 
 					let botVerts = acquireVertices(startPoint,EDGE_RIGHT,size);
-					botVerts = botVerts.map(point => ({ point, paddingX:1,paddingY:1 }));
-					// botVerts = botVerts.map(point => ({ point, paddingX:0,paddingY:1 }));
-					// botVerts[botVerts.length-1].paddingX = -1;
+					// botVerts = botVerts.map(point => ({ point, paddingX:1,paddingY:1 }));
+					botVerts = botVerts.map(point => ({ point, paddingX:0,paddingY:1 }));
+					botVerts[botVerts.length-1].paddingX = -1;
 
 					points.push(...botVerts,startVert,...leftVerts);
 				}

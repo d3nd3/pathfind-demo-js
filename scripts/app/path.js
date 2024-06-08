@@ -534,15 +534,19 @@ define( ['app/shared','app/map','app/bheap','app/grid','app/gl'], function (Shar
 					for larger sizes, we check only left.
 				*/
 				function ( soize,fromNode ) {
-					soize = 1;
 					if (soize==1) {
 						return (	Map.emptySpace[fromNode+Shared.gridWidth] == 0 ||
 									Map.emptySpace[fromNode-1] == 0
 						);
 					} else {
+	
+						// if (Map.emptySpace[fromNode+Shared.gridWidth*soize+(soize-1)] == 0) {
+							// Grid.appearDebugCube(self.x[fromNode],self.y[fromNode],0x00FF00,16,40);
+							// Grid.appearDebugCube(self.x[fromNode+Shared.gridWidth*soize+(soize-1)],self.y[fromNode+Shared.gridWidth*soize+(soize-1)],0xFF0000,32);
+						// }
 						return (
 							Map.emptySpace[fromNode+Shared.gridWidth*soize+(soize-1)] == 0 ||
-							Map.emptySpace[fromNode+Shared.gridWidth-1] == 0
+							Map.emptySpace[fromNode-1] == 0
 						);
 					}
 					

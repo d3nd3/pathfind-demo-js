@@ -44,7 +44,11 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 
 			var distThere = Math.sqrt(dx*dx+dy*dy);
 
-			
+			//We are already at that waypoint, nothing to do.
+			if (distThere == 0) {
+				alert("this should never happen, sound the alarms, contact developer");
+				return;
+			}
 
 			// var directionVector = new THREE.Vector3(movementX, movementY, 0).normalize();
 
@@ -88,6 +92,10 @@ define(['app/waypoints','app/grid','app/map','app/util','app/shared','app/line',
 					this.wpsystem.inProgress = false;
 					return;
 				}
+				//Problem: when distThere is 0, we can't spend our excess energy,
+				//if there is no new waypoint to move to.
+
+				//allowedDistance > distThere
 				let distRemain = allowedDistance - distThere;
 				if ( distRemain > 0 ) {
 					//surplass energy this frame.
